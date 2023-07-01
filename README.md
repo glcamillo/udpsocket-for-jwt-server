@@ -103,6 +103,12 @@ stateDiagram-v2
     s2 --> s0: sn=0 / nn=1
     s3 --> s0: sn=0 / nn=1
 ```
+Protocol definition about the `next_number`: the number generation will take account the value of 
+`max number` from two sources:
+
+a) from request; or
+
+b) from data definition in groups_num_members. In his version (20230629), the option (b) will be used.
 
 ### About cryptographic protocols and keys
 
@@ -156,17 +162,19 @@ Parameters:
 
 - `127.0.0.1` local endpoint: IPv4 address
 - `5555` local endpoint: port (5555/UDP)
-- `$HOME/tmp/`  Directory for keys and for logs
+- `$HOME/tmp/`  Directory for keys and for logs (optional). If not set, the current directory will be used.
 
 ##  CHANGELOG
 
-2023-05      : v. 0.1: Initial version.
+202305   : v.0.1: Initial version.
 
-2023-06-15  : v. 1.0: the script is functional and running in a cloud instance
+20230615 : v.1.0: the script is functional and running in a cloud instance
 
-2023-06-23  : v. 1.5: corrections and improving; the protocol function was amended.
+20230623 : v.1.5: corrections and improving; the protocol function was amended.
 
-2023-06-26  : v. 1.7: publication in Github; documenting and commenting the code.
+20230626 : v.1.7: publication in Github; documenting and commenting the code.
+
+20230629 : v.1.8: changed the protocol to account the max_number from the code.
 
 
 # TODO
@@ -187,7 +195,7 @@ f) Improve program/system execution resiliency.
 ### Meta
 
 Autor: G Camillo
-Last revision: 25 jun. 2023
+Last revision: 20230701
 
 - This is for testing and lab for networking.
 - About the Python code: this one is written by a person in the early stages of learning the language, so don't expect to use the best solution.
@@ -197,4 +205,5 @@ https://help.github.com/articles/creating-and-highlighting-code-blocks/
 https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams
 
 https://mermaid.js.org/intro/
+
 

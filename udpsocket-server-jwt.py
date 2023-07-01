@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Autor: G Camillo
-# Last revision: 2023-06-26
+# Last revision:20230701
 
 """
 
@@ -32,11 +32,19 @@ Payload of RESPONSE: the response contains info about the request and the next i
   "otp_number": 3205,    #  OTP random number generated during create of Response
   "otp_timestamp": 1687046022, #  OTP timestamp generated during create of Response
 }
+
+Protocol definition about the next_number: the generation will account the
+max number from two sources:
+a) from request; or
+b) from data definition in groups_num_members
+
+20230629: in this version, the option (b) will be used
+
 """
 
 
 # Set debugging messages - flag to printout log messages in screen
-printout_in_screen: bool = True
+printout_in_screen: bool = False
 
 
 import datetime
@@ -65,8 +73,8 @@ groups = ('JAVALI',
 
 groups_num_members = {'JAVALI': 3,
                       'PINHAO': 3,
-                      'BISSAU': 2,
-                      'NONAME': 3,
+                      'BISSAU': 3,
+                      'NONAME': 4,
                       'SOQUETINHO': 3,
                       'HEARTBEAT': 1 }  # This group is for testing the server
 
@@ -102,8 +110,6 @@ log_file_sucess = 'dec7557-log-sucess.txt'
 
 log_response_pay = "dec7557-response-payloads.txt"
 log_response_jwt = "dec7557-response-JWT.txt"
-
-
 
 
 def print_log(message):
@@ -188,7 +194,6 @@ def handle_request(request):
         jwt_dec = jwt.decode(request, options={"verify_signature": False})
         g_name = jwt_dec['group']
         g_name = str(g_name.upper())
-        # {'group': 'aguia', 'seq_number': 1, 'seq_max': 2, 'matricula': 12345678}
         print_log(f"[Handle Request] JWT decoded - type: {type(jwt_dec)}\n")
         print_log(f"[Handle Request] JWT decoded - content: {jwt_dec}\n")
         write_log(log_file_conn, f":{g_name}:{jwt_dec}:OK\n")
@@ -229,7 +234,6 @@ def generate_payload_for_response(request_payload, next_number):
     if request_payload['group'] in groups:
         request_in_str = str(request_payload)
         payload_for_response['id_request'] = hashlib.sha256(request_in_str.encode("utf-8")).hexdigest()
-        #payload_for_response['next_number'] = request_payload['seq_number'] + 1 # this number has already been checked
         payload_for_response['next_number'] = next_number
         payload_for_response['otp_number']  = str(random.randint(0, 20000))
         payload_for_response['otp_timestamp']  = int(datetime.datetime.utcnow().timestamp())
@@ -264,7 +268,6 @@ def what_next_number(g_name, seq_number, seq_max):
           max_number_elements_in_group = jwt_dec['seq_max']
           # g_num_received = request_payload['seq_number']
     """
-
     # Case 0: restart the protocol
     if seq_number == 0:
         groups_last_num_received[g_name] = 0
@@ -336,7 +339,11 @@ def udp_server(server_addr, server_port, buffer):
             else:
                 group = request_payload['group']
                 seq_number = request_payload['seq_number']
-                seq_max = request_payload['seq_max']
+                # 20230629: the value of seq_max will be retrieved from the data definition
+                #         in this code.
+                seq_max = groups_num_members[group]
+                #         No more from the user payload
+                # seq_max = request_payload['seq_max']
                 respond, next_number = what_next_number(group.upper(), int(seq_number), int(seq_max))
                 print_log(f"[udp_server] respond:{respond} and next_number:{next_number}\n")
                 # TODO use None
@@ -390,15 +397,18 @@ if __name__ == '__main__':
     if base_dir is None and len(sys.argv) == 1:
         print(f"""\n ERROR in command. The program parameters: {sys.argv[0]} base_dir\n
           or\n
-          $ {sys.argv[0]} base_dir local_address  local_port\n
+          $ {sys.argv[0]} local_address  local_port base_dir\n
           The parameter 'base_dir' contains all the files and the keys\n""")
     elif len(sys.argv) > 1:
-        if sys.argv[1]:
+        if len(sys.argv) == 2:
             server_addr = sys.argv[1]
             # socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
-        if sys.argv[2]:
+        elif len(sys.argv) == 3:
+            server_addr = sys.argv[1]
             server_port = int(sys.argv[2])
-        if sys.argv[3]:
+        elif len(sys.argv) == 4:
+            server_addr = sys.argv[1]
+            server_port = int(sys.argv[2])
             base_dir = sys.argv[3]
 
     # Full path specification
@@ -431,3 +441,5 @@ if __name__ == '__main__':
 
     while True:
         udp_server(server_addr, server_port, buffer)
+
+
